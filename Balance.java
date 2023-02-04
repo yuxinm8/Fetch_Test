@@ -13,14 +13,14 @@ public class Balance {
     // Use stack to store transaction from oldest to newest;
     Stack<String[]> inorder;
     // Store the maximum amount price can be deducted from user at each transaction
-    Map<String, Stack<Integer>> balance;
+    Map<String, Stack<Integer>> nameToOpeartion;
 
     Balance() {
         nameToIndex = new HashMap<>();
         indexToName = new HashMap<>();
         transactions = new PriorityQueue<>((a, b) -> (a[2].equals(b[2])) ? a[0].compareTo(b[0]): b[2].compareTo(a[2]));
         inorder = new Stack<>();
-        balance = new HashMap<>();
+        nameToOpeartion = new HashMap<>();
     }
 
     private void CVSReader() throws IOException {
@@ -44,8 +44,8 @@ public class Balance {
     }
 
     // Calculate maximum amount price can be deducted from user at each transaction
-    // Start from the latest transaction to ensure no negative balance
-    // Store the result in HashMap (balance)
+    // Start from the latest transaction to ensure no negative points
+    // Store the result in HashMap (nameToOpeartion)
     private void initial() {
         HashMap<String, Integer> nameToSpend = new HashMap<>();
         while (!transactions.isEmpty()) {
@@ -54,11 +54,11 @@ public class Balance {
             inorder.push(new String[]{name, value});
 
             int val = Integer.valueOf(value);
-            if (!balance.containsKey(name)) {
-                balance.putIfAbsent(name, new Stack<>());
+            if (!nameToOpeartion.containsKey(name)) {
+                nameToOpeartion.putIfAbsent(name, new Stack<>());
                 nameToSpend.put(name, nameToSpend.getOrDefault(name, 0));
             }
-            Stack<Integer> temp = balance.get(name);
+            Stack<Integer> temp = nameToOpeartion.get(name);
             if (val < 0) {
                 nameToSpend.put(name, nameToSpend.get(name) + val);
             } else{
@@ -66,7 +66,7 @@ public class Balance {
                nameToSpend.put(name, Math.min(later + val, 0));
                temp.push(Math.max(0, later + val));
             }
-            balance.put(name, temp);
+            nameToOpeartion.put(name, temp);
 
         }
     }
@@ -84,7 +84,7 @@ public class Balance {
             res[index] += val;
             if (total > 0) {
                 if (val <= 0) continue;
-                Stack<Integer> temp = balance.get(name);
+                Stack<Integer> temp = nameToOpeartion.get(name);
                 if (temp.isEmpty()) continue;
                 int maximumTransactionPrice = temp.pop();
                 res[index] -= total > maximumTransactionPrice ? maximumTransactionPrice : total;
