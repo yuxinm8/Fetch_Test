@@ -47,6 +47,7 @@ public class Balance {
     // Start from the latest transaction to ensure no negative balance
     // Store the result in HashMap (balance)
     private void initial() {
+        HashMap<String, Integer> nameToSpend = new HashMap<>();
         while (!transactions.isEmpty()) {
             String[] curr = transactions.poll();
             String name = curr[0], value = curr[1];
@@ -55,11 +56,18 @@ public class Balance {
             int val = Integer.valueOf(value);
             if (!balance.containsKey(name)) {
                 balance.putIfAbsent(name, new Stack<>());
-                balance.get(name).add(-val);
+                balance.get(name).add(val);
+                nameToSpend.put(name, nameToSpend.getOrDefault(name, 0) + Math.min(0, val));
             } else {
                 Stack<Integer> temp = balance.get(name);
-                if (val < 0) temp.add(-val);
-                else temp.add(-val + Math.max(0, temp.peek()));
+                if (val < 0) {
+                    temp.push(val);
+                    nameToSpend.put(name, nameToSpend.get(name) + Math.min(0, val));
+                } else{
+                   int later = nameToSpend.get(name);
+                   nameToSpend.put(name, Math.min(later + val, 0));
+                   temp.push(later + val);
+                }
                 balance.put(name, temp);
             }
         }
@@ -76,11 +84,11 @@ public class Balance {
             // When the previous spend can not cover the amount of points to spend
             // If we can get points from this transaction, update the left amount of points
             if (total > 0) {
-                if (val >= 0) continue;
-                if (total + val < 0) {
+                if (val <= 0) continue;
+                if (total - val < 0) {
                     res[index] += Integer.valueOf(curr[1]) - total;
                 }
-                total += val;
+                total -= val;
             } else {
                 // If the total amount of points can be obtained from previous transactions
                 // For the latter transactions, the points is used to update payer account balance
