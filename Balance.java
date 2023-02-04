@@ -56,20 +56,18 @@ public class Balance {
             int val = Integer.valueOf(value);
             if (!balance.containsKey(name)) {
                 balance.putIfAbsent(name, new Stack<>());
-                balance.get(name).add(val);
-                nameToSpend.put(name, nameToSpend.getOrDefault(name, 0) + Math.min(0, val));
-            } else {
-                Stack<Integer> temp = balance.get(name);
-                if (val < 0) {
-                    temp.push(val);
-                    nameToSpend.put(name, nameToSpend.get(name) + Math.min(0, val));
-                } else{
-                   int later = nameToSpend.get(name);
-                   nameToSpend.put(name, Math.min(later + val, 0));
-                   temp.push(later + val);
-                }
-                balance.put(name, temp);
+                nameToSpend.put(name, nameToSpend.getOrDefault(name, 0));
             }
+            Stack<Integer> temp = balance.get(name);
+            if (val < 0) {
+                nameToSpend.put(name, nameToSpend.get(name) + val);
+            } else{
+               int later = nameToSpend.get(name);
+               nameToSpend.put(name, Math.min(later + val, 0));
+               temp.push(Math.max(0, later + val));
+            }
+            balance.put(name, temp);
+
         }
     }
 
@@ -80,20 +78,19 @@ public class Balance {
         while (!inorder.isEmpty()) {
             String[] curr = inorder.pop();
             String name = curr[0];
-            int val = balance.get(name).pop(), index = nameToIndex.get(name);
+            int val = Integer.valueOf(curr[1]), index = nameToIndex.get(name);
             // When the previous spend can not cover the amount of points to spend
             // If we can get points from this transaction, update the left amount of points
+            res[index] += val;
             if (total > 0) {
                 if (val <= 0) continue;
-                if (total - val < 0) {
-                    res[index] += Integer.valueOf(curr[1]) - total;
-                }
-                total -= val;
-            } else {
-                // If the total amount of points can be obtained from previous transactions
-                // For the latter transactions, the points is used to update payer account balance
-                res[index] += Integer.valueOf(curr[1]);
+                Stack<Integer> temp = balance.get(name);
+                if (temp.isEmpty()) continue;
+                int maximumTransactionPrice = temp.pop();
+                res[index] -= total > maximumTransactionPrice ? maximumTransactionPrice : total;
+                total -= maximumTransactionPrice;
             }
+
         }
         return res;
     }
